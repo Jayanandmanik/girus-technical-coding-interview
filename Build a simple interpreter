@@ -1,0 +1,122 @@
+import java.util.*;
+
+public class MiniInterpreter {
+    // Map to store variable names and their integer values
+    private final Map<String, Integer> vars = new HashMap<>();
+
+    // Entry point: process a list of statements
+    public void run(List<String> lines) {
+        for (String line : lines) {
+            line = line.trim();                         // Remove leading/trailing spaces
+            if (line.startsWith("let ")) {              // Variable declaration
+                executeLet(line);
+            } else if (line.startsWith("if ")) {        // If-statement
+                executeIf(line);
+            }
+            // ignore blank lines or unsupported statements
+        }
+        // After executing all, print variables
+        printVariables();
+    }
+
+    // Handle 'let' statements: let x = expression;
+    private void executeLet(String stmt) {
+        // Remove 'let ' and trailing ';'
+        String body = stmt.substring(4, stmt.length() - 1).trim();
+        // Split at first '=' into var name and expression
+        String[] parts = body.split("=", 2);
+        String name = parts[0].trim();               // variable name
+        String expr = parts[1].trim();               // expression text
+        int value = evalExpr(expr);                  // compute its value
+        vars.put(name, value);                       // store in map
+    }
+
+    // Handle 'if' statements: if (cond) { let ...; }
+    private void executeIf(String stmt) {
+        // Find condition between '(' and ')'
+        int condStart = stmt.indexOf('(');
+        int condEnd = stmt.indexOf(')');
+        String cond = stmt.substring(condStart + 1, condEnd).trim();
+        // Find inner let statement between '{' and '}'
+        int braceOpen = stmt.indexOf('{');
+        int braceClose = stmt.indexOf('}');
+        String inner = stmt.substring(braceOpen + 1, braceClose).trim();
+        // Evaluate condition
+        if (evalCond(cond)) {
+            executeLet(inner);                        // run the let if true
+        }
+    }
+
+    // Evaluate a boolean condition like "a < 5" or "x == y"
+    private boolean evalCond(String cond) {
+        // Operators in order of length to avoid conflict (>= before >, etc.)
+        String[] ops = {"==", "!=", "<=", ">=", "<", ">"};
+        for (String op : ops) {
+            int idx = cond.indexOf(op);
+            if (idx != -1) {
+                String left = cond.substring(0, idx).trim();
+                String right = cond.substring(idx + op.length()).trim();
+                int lv = evalExpr(left);
+                int rv = evalExpr(right);
+                switch (op) {
+                    case "==": return lv == rv;
+                    case "!=": return lv != rv;
+                    case "<":  return lv < rv;
+                    case ">":  return lv > rv;
+                    case "<=": return lv <= rv;
+                    case ">=": return lv >= rv;
+                }
+            }
+        }
+        return false;  // no operator found
+    }
+
+    // Evaluate an arithmetic expression: supports + and - of two terms
+    private int evalExpr(String expr) {
+        // Handle addition or subtraction
+        if (expr.contains("+")) {
+            String[] parts = expr.split("\\+", 2);
+            return evalExpr(parts[0].trim()) + evalExpr(parts[1].trim());
+        }
+        if (expr.contains("-")) {
+            String[] parts = expr.split("-", 2);
+            return evalExpr(parts[0].trim()) - evalExpr(parts[1].trim());
+        }
+        // It's either a literal integer or a variable
+        if (expr.matches("\\d+")) {
+            return Integer.parseInt(expr);
+        } else {
+            // look up variable, default 0 if not found
+            return vars.getOrDefault(expr, 0);
+        }
+    }
+
+    // Print all variables and their values
+    private void printVariables() {
+        System.out.println("Variables state:");
+        for (Map.Entry<String, Integer> e : vars.entrySet()) {
+            System.out.println(e.getKey() + " = " + e.getValue());
+        }
+    }
+
+    // Example usage and test cases
+    public static void main(String[] args) {
+        MiniInterpreter interp = new MiniInterpreter();
+
+        List<String> program = Arrays.asList(
+            "let a = 5;",
+            "let b = 10;",
+            "if (a < b) { let c = a + b; }",
+            "if (b < a) { let d = 1; }",
+            "let e = c - 3;"
+        );
+
+        interp.run(program);
+        // Expected output:
+        // Variables state:
+        // a = 5
+        // b = 10
+        // c = 15
+        // e = 12
+    }
+}
