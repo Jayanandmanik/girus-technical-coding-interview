@@ -1,0 +1,75 @@
+import java.util.*;  // Import utilities for List and ArrayList
+
+public class SudokuValidatorWithCustomZones {
+
+    // Check if the number is between 1 and 9 and hasn't appeared before in this group
+    private static boolean isValidAndUnique(int val, boolean[] seen) {
+        if (val < 1 || val > 9 || seen[val]) return false;  // If invalid or repeated, return false
+        seen[val] = true;  // Mark this number as seen
+        return true;  // Number is valid and unique
+    }
+
+    // Check all rows, columns, and the 3x3 boxes follow Sudoku rules
+    public static boolean validateStandard(int[][] board) {
+        for (int i = 0; i < 9; i++) {  // For each row, column and box
+            boolean[] rowCheck = new boolean[10];  // Keep track of numbers in this row
+            boolean[] colCheck = new boolean[10];  // Keep track of numbers in this column
+            boolean[] boxCheck = new boolean[10];  // Keep track of numbers in this 3x3 box
+            for (int j = 0; j < 9; j++) {
+                int rowVal = board[i][j];  // Number in the current row
+                int colVal = board[j][i];  // Number in the current column
+                int boxVal = board[3 * (i / 3) + j / 3][3 * (i % 3) + j % 3];  // Number in the current 3x3 box
+
+                if (!isValidAndUnique(rowVal, rowCheck)) return false;  // If row invalid, return false
+                if (!isValidAndUnique(colVal, colCheck)) return false;  // If column invalid, return false
+                if (!isValidAndUnique(boxVal, boxCheck)) return false;  // If box invalid, return false
+            }
+        }
+        return true;  // All rows, columns and boxes are valid
+    }
+
+    // Check each custom zone has unique numbers 1 to 9
+    public static boolean validateCustomZones(int[][] board, List<List<int[]>> customZones) {
+        for (List<int[]> zone : customZones) {  // For every custom zone
+            boolean[] check = new boolean[10];  // Track numbers seen in this zone
+            for (int[] cell : zone) {  // For every cell in the zone
+                int val = board[cell[0]][cell[1]];  // Get the number at this cell
+                if (!isValidAndUnique(val, check)) return false;  // If invalid or duplicate, return false
+            }
+        }
+        return true;  // All custom zones are valid
+    }
+
+    // Main validation method: checks both standard rules and custom zones
+    public static boolean isValidSudoku(int[][] board, List<List<int[]>> customZones) {
+        return validateStandard(board) && validateCustomZones(board, customZones);
+    }
+
+    // Test the validator with a sample Sudoku and one custom zone
+    public static void main(String[] args) {
+        int[][] board = {
+            {5,3,4,6,7,8,9,1,2},
+            {6,7,2,1,9,5,3,4,8},
+            {1,9,8,3,4,2,5,6,7},
+            {8,5,9,7,6,1,4,2,3},
+            {4,2,6,8,5,3,7,9,1},
+            {7,1,3,9,2,4,8,5,6},
+            {9,6,1,5,3,7,2,8,4},
+            {2,8,7,4,1,9,6,3,5},
+            {3,4,5,2,8,6,1,7,9}
+        };
+
+        List<List<int[]>> customZones = new ArrayList<>();  // List to hold custom zones
+
+        List<int[]> zone1 = new ArrayList<>();  // Create one custom zone (top-left 3x3 box)
+        for (int r = 0; r < 3; r++) {
+            for (int c = 0; c < 3; c++) {
+                zone1.add(new int[]{r, c});  // Add each cell coordinate to the zone
+            }
+        }
+        customZones.add(zone1);  // Add this custom zone to the list
+
+        // Print if the Sudoku board is valid including custom zones
+        System.out.println("This is a Valid SUDOKU : " + isValidSudoku(board, customZones));  // Should print true
+    }
+}
