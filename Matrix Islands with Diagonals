@@ -1,0 +1,87 @@
+import java.util.*;
+
+public class MatrixIslands {
+
+    // All 8 directions: up, down, left, right, and the 4 diagonals
+    private static final int[][] DIRECTIONS = {
+        {-1, 0},  // up
+        { 1, 0},  // down
+        { 0,-1},  // left
+        { 0, 1},  // right
+        {-1,-1},  // up-left
+        {-1, 1},  // up-right
+        { 1,-1},  // down-left
+        { 1, 1}   // down-right
+    };
+
+    // Check that (x,y) is inside the grid, is a 1, and not yet visited
+    private static boolean isValid(int[][] grid, boolean[][] visited, int x, int y) {
+        int rows = grid.length;
+        int cols = grid[0].length;
+        return x >= 0 && x < rows
+            && y >= 0 && y < cols
+            && grid[x][y] == 1
+            && !visited[x][y];
+    }
+
+    // DFS to mark every cell in this island as visited
+    private static void dfs(int[][] grid, boolean[][] visited, int x, int y) {
+        visited[x][y] = true;
+        for (int[] d : DIRECTIONS) {
+            int nx = x + d[0];
+            int ny = y + d[1];
+            if (isValid(grid, visited, nx, ny)) {
+                dfs(grid, visited, nx, ny);
+            }
+        }
+    }
+
+    // Count how many islands of 1s exist in the grid (with diagonal connections)
+    public static int countIslands(int[][] grid) {
+        int rows = grid.length;
+        int cols = grid[0].length;
+        boolean[][] visited = new boolean[rows][cols];
+        int count = 0;
+
+        for (int i = 0; i < rows; i++) {
+            for (int j = 0; j < cols; j++) {
+                if (grid[i][j] == 1 && !visited[i][j]) {
+                    dfs(grid, visited, i, j);
+                    count++;
+                }
+            }
+        }
+
+        return count;
+    }
+
+    public static void main(String[] args) {
+        // Test Case 1: one big island
+        int[][] grid1 = {
+            {1, 1, 0, 0},
+            {0, 1, 0, 0},
+            {0, 0, 1, 1},
+            {0, 0, 0, 1}
+        };
+        System.out.println("Test Case 1 - Islands: " + countIslands(grid1));  
+        // Expected: 1
+
+        // Test Case 2a: three separate islands
+        int[][] grid2a = {
+            {1, 1, 0},
+            {0, 0, 0},
+            {1, 0, 1}
+        };
+        System.out.println("Test Case 2a - Islands: " + countIslands(grid2a));  
+        // Expected: 3  (clusters at (0,0)-(0,1), at (2,0), and at (2,2))
+
+        // Test Case 2b: two separate islands
+        int[][] grid2b = {
+            {1, 0, 1},
+            {0, 0, 0},
+            {1, 0, 1}
+        };
+        System.out.println("Test Case 2b - Islands: " + countIslands(grid2b));  
+        // Expected: 2  (with diagonals, clusters: (0,0)-(1,1)-(2,2) is one; (0,2)-(1,1)-(2,0) is second)
+    }
+}
