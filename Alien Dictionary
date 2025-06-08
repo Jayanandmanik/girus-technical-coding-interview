@@ -1,0 +1,113 @@
+import java.util.*;
+
+public class AlienDictionary {
+
+    // Function to find the order of characters from the alien language words
+    public static String alienOrder(String[] words) {
+        // Create a map where each character points to a set of characters that come after it
+        Map<Character, Set<Character>> graph = new HashMap<>();
+        // Map to store how many characters point to each character (in-degree count)
+        Map<Character, Integer> inDegree = new HashMap<>();
+
+        // Loop through each word
+        for (String word : words) {
+            // Loop through each character in the word
+            for (char c : word.toCharArray()) {
+                // Add character to graph if not present
+                graph.putIfAbsent(c, new HashSet<>());
+                // Initialize in-degree of character to 0 if not already set
+                inDegree.putIfAbsent(c, 0);
+            }
+        }
+
+        // Compare adjacent words to find ordering rules
+        for (int i = 0; i < words.length - 1; i++) {
+            // Take two consecutive words
+            String word1 = words[i];
+            String word2 = words[i + 1];
+            // Find the minimum length of these two words
+            int length = Math.min(word1.length(), word2.length());
+
+            // Flag to check if a difference in characters is found
+            boolean differenceFound = false;
+
+            // Compare characters of the two words one by one
+            for (int j = 0; j < length; j++) {
+                char c1 = word1.charAt(j);
+                char c2 = word2.charAt(j);
+
+                // If characters are different, this gives ordering info
+                if (c1 != c2) {
+                    // If c2 is not already a neighbor of c1 in the graph
+                    if (!graph.get(c1).contains(c2)) {
+                        // Add c2 as a neighbor of c1
+                        graph.get(c1).add(c2);
+                        // Increase the in-degree of c2 by 1
+                        inDegree.put(c2, inDegree.get(c2) + 1);
+                    }
+                    // Mark that difference is found and break loop
+                    differenceFound = true;
+                    break;
+                }
+            }
+
+            // If no difference found and word1 is longer than word2, order is invalid
+            if (!differenceFound && word1.length() > word2.length()) {
+                return ""; // Return empty string for invalid ordering
+            }
+        }
+
+        // Queue to hold characters with zero in-degree (no dependencies)
+        Queue<Character> queue = new LinkedList<>();
+        // Add all characters with zero in-degree to the queue
+        for (char c : inDegree.keySet()) {
+            if (inDegree.get(c) == 0) {
+                queue.offer(c);
+            }
+        }
+
+        // StringBuilder to build the final character order
+        StringBuilder order = new StringBuilder();
+
+        // Process the queue until empty
+        while (!queue.isEmpty()) {
+            // Take character from front of the queue
+            char current = queue.poll();
+            // Add it to the final order string
+            order.append(current);
+
+            // For every character that comes after current character
+            for (char next : graph.get(current)) {
+                // Reduce the in-degree of that next character by 1
+                inDegree.put(next, inDegree.get(next) - 1);
+                // If in-degree becomes zero, add it to the queue
+                if (inDegree.get(next) == 0) {
+                    queue.offer(next);
+                }
+            }
+        }
+
+        // If final order length is less than total unique chars, it means a cycle exists
+        if (order.length() < inDegree.size()) {
+            return ""; // Return empty string for invalid order due to cycle
+        }
+
+        // Return the calculated order of characters
+        return order.toString();
+    }
+
+    // Main function to test the alienOrder function with sample inputs
+    public static void main(String[] args) {
+        // Test case 1: example from problem description
+        String[] words1 = {"wrt", "wrf", "er", "ett", "rftt"};
+        System.out.println("Alien Dictionary Order: " + alienOrder(words1)); // Expected: "wertf"
+
+        // Test case 2: simple case with two words
+        String[] words2 = {"z", "x"};
+        System.out.println("Alien Dictionary Order: " + alienOrder(words2)); // Expected: "zx"
+
+        // Test case 3: invalid order because of cycle
+        String[] words3 = {"z", "x", "z"};
+        System.out.println("Alien Dictionary Order: " + alienOrder(words3)); // Expected: ""
+    }
+}
