@@ -1,0 +1,50 @@
+public class BitwiseMatchingPattern {
+
+    public static int nextHigherWithSameBits(int n) {
+        // Step 1: Edge case check
+        if (n == 0) return -1;
+
+        int c = n;
+        int c0 = 0; // count of trailing 0s
+        int c1 = 0; // count of 1s after trailing 0s
+
+        // Count trailing zeros (c0)
+        while (((c & 1) == 0) && (c != 0)) {
+            c0++;
+            c >>= 1;
+        }
+
+        // Count ones after trailing zeros (c1)
+        while ((c & 1) == 1) {
+            c1++;
+            c >>= 1;
+        }
+
+        // If n is like 11110000..000, then there is no bigger number
+        if (c0 + c1 == 31 || c0 + c1 == 0) return -1;
+
+        // Position of rightmost non-trailing zero (p)
+        int p = c0 + c1;
+
+        // Step 1: Flip rightmost non-trailing 0
+        n |= (1 << p);
+
+        // Step 2: Clear all bits to the right of p
+        n &= ~((1 << p) - 1);
+
+        // Step 3: Insert (c1-1) ones on the right
+        n |= (1 << (c1 - 1)) - 1;
+
+        return n;
+    }
+
+    public static void main(String[] args) {
+        int n1 = 5; // Binary: 101 -> Output: 6 (110)
+        int n2 = 6; // Binary: 110 -> Output: 9 (1001)
+        int n3 = 127; // Binary: 1111111 -> Output: 191 (10111111)
+
+        System.out.println("Next for 5: " + nextHigherWithSameBits(n1));
+        System.out.println("Next for 6: " + nextHigherWithSameBits(n2));
+        System.out.println("Next for 127: " + nextHigherWithSameBits(n3));
+    }
+}
