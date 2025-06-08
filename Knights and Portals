@@ -1,0 +1,134 @@
+import java.util.*;
+
+public class KnightsAndPortals {
+
+    // Directions for moving: right, down, left, up
+    private static final int[][] DIRECTIONS = {
+        {0, 1},  // move right
+        {1, 0},  // move down
+        {0, -1}, // move left
+        {-1, 0}  // move up
+    };
+
+    // Check if a cell (x, y) is inside the grid and not a wall, and not yet visited
+    private static boolean isValid(int x, int y, int[][] grid, boolean[][] visited) {
+        int rows = grid.length;
+        int cols = grid[0].length;
+        return x >= 0 && x < rows
+            && y >= 0 && y < cols
+            && grid[x][y] == 0
+            && !visited[x][y];
+    }
+
+    // Run a BFS from start to end without using teleport
+    // Returns number of steps, or -1 if end is unreachable
+    private static int bfs(int[][] grid, int[] start, int[] end) {
+        int rows = grid.length;
+        int cols = grid[0].length;
+
+        boolean[][] visited = new boolean[rows][cols];
+        Queue<int[]> queue = new LinkedList<>();
+
+        // Put start cell into queue with distance 0
+        queue.offer(new int[]{start[0], start[1], 0});
+        visited[start[0]][start[1]] = true;
+
+        // Standard BFS loop
+        while (!queue.isEmpty()) {
+            int[] curr = queue.poll();
+            int x = curr[0];
+            int y = curr[1];
+            int dist = curr[2];
+
+            // If we reached end, return the distance
+            if (x == end[0] && y == end[1]) {
+                return dist;
+            }
+
+            // Try all four moves
+            for (int[] d : DIRECTIONS) {
+                int nx = x + d[0];
+                int ny = y + d[1];
+
+                if (isValid(nx, ny, grid, visited)) {
+                    visited[nx][ny] = true;
+                    queue.offer(new int[]{nx, ny, dist + 1});
+                }
+            }
+        }
+
+        // End was never reached
+        return -1;
+    }
+
+    // Main function to find shortest path allowing one teleport
+    public static int shortestPathWithTeleport(int[][] grid) {
+        int rows = grid.length;
+        int cols = grid[0].length;
+
+        // Collect all empty cells (where grid[i][j] == 0)
+        List<int[]> emptyCells = new ArrayList<>();
+        for (int i = 0; i < rows; i++) {
+            for (int j = 0; j < cols; j++) {
+                if (grid[i][j] == 0) {
+                    emptyCells.add(new int[]{i, j});
+                }
+            }
+        }
+
+        // Step 1: Try a normal BFS without teleport
+        int minSteps = bfs(grid, new int[]{0, 0}, new int[]{rows - 1, cols - 1});
+
+        // Step 2: Try using one teleport between any two empty cells
+        for (int[] from : emptyCells) {
+            for (int[] to : emptyCells) {
+                // Skip if it's the same cell
+                if (from[0] == to[0] && from[1] == to[1]) {
+                    continue;
+                }
+
+                // Steps to reach 'from' cell without teleport
+                int stepsToFrom = bfs(grid, new int[]{0, 0}, from);
+                // Steps to go from 'to' cell to end without teleport
+                int stepsFromToEnd = bfs(grid, to, new int[]{rows - 1, cols - 1});
+
+                // If both parts are reachable, update minimum steps
+                if (stepsToFrom != -1 && stepsFromToEnd != -1) {
+                    int total = stepsToFrom + 1 + stepsFromToEnd; // +1 for the teleport jump
+                    if (minSteps == -1 || total < minSteps) {
+                        minSteps = total;
+                    }
+                }
+            }
+        }
+
+        return minSteps;
+    }
+
+    // Test the solution with three different cases
+    public static void main(String[] args) {
+        // Test Case 1: 1×1 grid, start and end are same cell
+        int[][] grid1 = {
+            {0}
+        };
+        int result1 = shortestPathWithTeleport(grid1);
+        System.out.println("Test Case 1 - Shortest path: " + result1);  // Expected: 0
+
+        // Test Case 2: Must teleport from start to end
+        int[][] grid2 = {
+            {0, 1, 1},
+            {1, 1, 1},
+            {1, 1, 0}
+        };
+        int result2 = shortestPathWithTeleport(grid2);
+        System.out.println("Test Case 2 - Shortest path with teleport: " + result2);  // Expected: 1
+
+        // Test Case 3: End is unreachable even with teleport
+        int[][] grid3 = {
+            {0, 1},
+            {1, 1}
+        };
+        int result3 = shortestPathWithTeleport(grid3);
+        System.out.println("Test Case 3 - Unreachable: " + result3);  // Expected: -1
+    }
+}
